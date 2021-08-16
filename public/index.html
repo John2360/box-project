@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>John Box Management</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--===============================================================================================-->	
+	<link rel="icon" type="image/png" href="images/icons/favicon.ico"/>
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="fonts/iconic/css/material-design-iconic-font.min.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="vendor/animate/animate.css">
+<!--===============================================================================================-->	
+	<link rel="stylesheet" type="text/css" href="vendor/css-hamburgers/hamburgers.min.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="vendor/animsition/css/animsition.min.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="vendor/select2/select2.min.css">
+<!--===============================================================================================-->	
+	<link rel="stylesheet" type="text/css" href="vendor/daterangepicker/daterangepicker.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="css/util.css">
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+	<link rel="stylesheet" type="text/css" href="css/spinkit.min.css">
+<!--===============================================================================================-->
+</head>
+<body>
+	
+	<div class="limiter">
+		<div class="container-login100">
+			<div class="wrap-login100">
+					<span class="login100-form-title p-b-48">
+						John Box <i class="zmdi zmdi-square-o"></i>
+					</span>
+
+					<select class="form-select input100" aria-label="Default select example" id="box-id-select">
+						<option value='none' selected>Select a box</option>
+						<option value='VQeGGCPJAd'>McKenzie</option>
+						<option value='QF0FkoUOA6'>Ellie</option>
+					</select>
+
+					<div style="height: 30px;"></div>
+
+					<div class="wrap-input100">
+						<textarea class="input100" id="message" type="text" name="message" style="padding-top: 15px;"></textarea>
+						<span class="focus-input100" data-placeholder="Message"></span>
+					</div>
+
+					<div class="container-login100-form-btn">
+						<div class="wrap-login100-form-btn">
+							<div class="login100-form-bgbtn"></div>
+							<button class="login100-form-btn" onclick="sendMessage()">
+								Send
+							</button>
+						</div>
+					</div>
+
+					<div class="text-center p-t-115">
+
+						<a class="txt2" onclick="openWiFiEditor()">
+							Edit Wifi
+						</a>
+					</div>
+			</div>
+		</div>
+	</div>
+	
+
+	<div id="dropDownSelect1"></div>
+	
+<!--===============================================================================================-->
+	<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<!--===============================================================================================-->
+	<script src="vendor/animsition/js/animsition.min.js"></script>
+<!--===============================================================================================-->
+	<script src="vendor/bootstrap/js/popper.js"></script>
+	<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+<!--===============================================================================================-->
+	<script src="vendor/select2/select2.min.js"></script>
+<!--===============================================================================================-->
+	<script src="vendor/daterangepicker/moment.min.js"></script>
+	<script src="vendor/daterangepicker/daterangepicker.js"></script>
+<!--===============================================================================================-->
+	<script src="vendor/countdowntime/countdowntime.js"></script>
+<!--===============================================================================================-->
+	<script src="js/main.js"></script>
+
+<!--===============================================================================================-->
+	<script>
+		let server = "http://box.johnfinberg.com:8080";
+		boxid = null;
+
+		$('#box-id-select').change(function() {
+			if ($(this).val() != 'none') {
+				openConfirm($(this).val(), $('#box-id-select option:selected').text());
+			} else if ($(this).val() == 'none') {
+				boxid = null;
+			}
+		});
+
+		function openConfirm(id, name) {
+			$('#modal-confirm-box-name').text(name);
+			$('#confirmBoxModal').modal('show');
+		}
+
+		function setBoxID() {
+			boxid = $('#box-id-select').val();
+		}
+
+		function resetSelector(){
+			if (boxid == null){
+				$("#box-id-select").val('none');
+			} else {
+				$("#box-id-select").val(boxid);
+			}
+		}
+
+		function sendMessage(){
+			if (boxid == null){
+				$('#modal-error-message').text('Box has not been selected. Please select a box and try again.');
+				$('#errorModal').modal('show');
+				return;
+			}
+
+			var message = $('textarea#message').val();
+			if (message == ''){
+				$('#modal-error-message').text('A message has not been entered. Please enter a message and try again.');
+				$('#errorModal').modal('show');
+				return;
+			}
+
+			$('#sending-modal-success').hide();
+			$('#sending-modal-fail').hide();
+
+			$('#sending-modal-loader').show();
+			$('#sendingModal').modal('show');
+
+			let url = server+"/box/"+boxid+"/post";
+			console.log(url);
+			var settings = {
+			"url": url,
+			"method": "POST",
+			"timeout": 0,
+			"headers": {
+				"Content-Type": "application/json"
+			},
+			"data": JSON.stringify({
+				"message": message
+			}),
+			};
+
+			setTimeout(function () {
+				$('#sending-modal-loader').hide();
+				$.ajax(settings).done(function (response) {
+					response = JSON.parse(response);
+					console.log(response);
+					if ('status' in response && response['status'] == 'success'){
+						$('#sending-modal-success').show();
+						return
+					}
+
+					if ('error' in response){
+						$('#sending-modal-fail-message').text(response['error']);
+						$('#sending-modal-fail').show();
+						return
+					}
+					
+					$('#sending-modal-fail-message').text('unkown');
+					$('#sending-modal-fail').show();
+					return
+				});
+			}, 1500);
+		}
+
+		function openWiFiEditor(){
+			if (boxid == null){
+				$('#modal-error-message').text('Box has not been selected. Please select a box and try again.');
+				$('#errorModal').modal('show');
+				return;
+			}
+
+			$('#wifi-modal-success').hide();
+			$('#wifi-modal-fail').hide();
+
+			var settings = {
+			"url": server+"/box/"+boxid,
+			"method": "GET",
+			"timeout": 0,
+			};
+
+			$.ajax(settings).done(function (response) {
+				response = JSON.parse(response);
+				console.log(response);
+				if ('ssid' in response && 'password' in response){
+					$('#wifimodal-ssid').val(response['ssid']);
+					$('#wifimodal-password').val(response['password']);
+					$('#wifiModal').modal('show');
+					return
+				}
+				
+				$('#modal-error-message').text('error unkown');
+				$('#errorModal').modal('show');
+				return
+			});
+		}
+
+		function saveWiFi(){
+			if (boxid == null){
+				$('#modal-error-message').text('Box has not been selected. Please select a box and try again.');
+				$('#errorModal').modal('show');
+				return;
+			}
+
+			var ssid = $('#wifimodal-ssid').val();
+			if (ssid == ''){
+				$('#modal-error-message').text('A network SSID has not been entered. Please enter a message and try again.');
+				$('#errorModal').modal('show');
+				return;
+			}
+
+			var password = $('#wifimodal-password').val();
+			if (password == ''){
+				$('#modal-error-message').text('A network password has not been entered. Please enter a message and try again.');
+				$('#errorModal').modal('show');
+				return;
+			}
+
+			var settings = {
+			"url": server+"/box/"+boxid+"/wifi",
+			"method": "POST",
+			"timeout": 0,
+			"headers": {
+				"Content-Type": "application/json"
+			},
+			"data": JSON.stringify({
+				"ssid": ssid,
+				"password": password
+			}),
+			};
+
+			$.ajax(settings).done(function (response) {
+				response = JSON.parse(response);
+				console.log(response);
+				if ('status' in response && response['status'] == 'success'){
+					$('#wifi-modal-success').show();
+					return
+				}
+
+				if ('error' in response){
+					$('#wifi-modal-fail-message').text(response['error']);
+					$('#wifi-modal-fail').show();
+					return
+				}
+				
+				$('#wifi-modal-fail-message').text('unkown');
+				$('#wifi-modal-fail').show();
+				return
+			});
+		}
+
+		let toggle_value = false;
+		function togglePassword(){
+			if (toggle_value == false){
+				$('#wifimodal-password').attr('type','text');
+				$('#wifieditior-password-toggle').removeClass('zmdi-eye');
+				$('#wifieditior-password-toggle').addClass('zmdi-eye-off');
+				toggle_value = true;
+			} else {
+				$('#wifimodal-password').attr('type','password');
+				$('#wifieditior-password-toggle').addClass('zmdi-eye');
+				$('#wifieditior-password-toggle').removeClass('zmdi-eye-off');
+				toggle_value = false;
+			}
+		}
+	</script>
+
+	<!-- Modal -->
+	<div class="modal fade" id="confirmBoxModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+			<h5 class="modal-title" id="exampleModalLabel">Confirm Box</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+			</div>
+			<div class="modal-body">
+			Are you sure that you want to select the box named <b><span id="modal-confirm-box-name"></span></b>?
+			</div>
+			<div class="modal-footer">
+			<button type="button" class="btn btn-default" data-dismiss="modal" onclick="resetSelector()">Cancel</button>
+			<button type="button" class="btn btn-primary" data-dismiss="modal" onclick="setBoxID()">Select</button>
+			</div>
+		</div>
+		</div>
+	</div>
+
+	<!-- Error Modal -->
+	<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+			<h5 class="modal-title" id="exampleModalLabel">Error</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+			</div>
+			<div class="modal-body">
+			<span id="modal-error-message"></span>
+			</div>
+			<div class="modal-footer">
+			<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+			</div>
+		</div>
+		</div>
+	</div>
+
+	<!-- WiFi Modal -->
+	<div class="modal fade" id="wifiModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+			<h5 class="modal-title" id="exampleModalLabel">WiFi Editor</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+			</div>
+			<div class="modal-body">
+				<div class="alert alert-success alert-dismissible" id="wifi-modal-success" style="display: none;">
+					<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+					<strong>Success!</strong> WiFi has been saved.
+				</div>
+				<div class="alert alert-danger alert-dismissible" id="wifi-modal-fail" style="display: none;">
+					<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+					<strong>Error:</strong> <span id='wifi-modal-fail-message'></span>
+				</div>
+				<div style="height: 30px;"></div>
+				<div class="wrap-input100 validate-input" data-validate="Enter SSID">
+					<input class="input100 has-val" id="wifimodal-ssid" type="text" name="ssid">
+					<span class="focus-input100" data-placeholder="SSID"></span>
+				</div>
+				<div class="wrap-input100 validate-input" data-validate="Enter password">
+					<span class="btn-show-pass" onclick="togglePassword()">
+						<i class="zmdi zmdi-eye" id='wifieditior-password-toggle'></i>
+					</span>
+					<input class="input100 has-val" id="wifimodal-password" type="password" name="password">
+					<span class="focus-input100" data-placeholder="Password"></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary" onclick="saveWiFi()">Save</button>
+			</div>
+		</div>
+		</div>
+	</div>
+
+	<!-- Sending Modal -->
+	<div class="modal fade" id="sendingModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+			<h5 class="modal-title" id="exampleModalLabel">Sending Message</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+			</div>
+			<div class="modal-body">
+				<div class="spinner" id="sending-modal-loader" style="display: none;">
+					<div class="bounce1"></div>
+					<div class="bounce2"></div>
+					<div class="bounce3"></div>
+				</div>
+				<div class="alert alert-success" id="sending-modal-success" style="display: none;">
+					<strong>Success!</strong> Message has been sent to box.
+				</div>
+				<div class="alert alert-danger" id="sending-modal-fail" style="display: none;">
+					<strong>Error:</strong> <span id='sending-modal-fail-message'></span>
+				</div>
+			<div class="modal-footer">
+			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+		</div>
+	</div>
+
+
+</body>
+</html>
